@@ -37,7 +37,7 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_SSH_KEY }}
           script: |
-            docker pull JerfinJeshua/springboot-app:latest
+            docker pull jerfinjeshua/springboot-app:latest
             docker stop springboot-app || true
             docker rm springboot-app || true
             docker run -d --name springboot-app -p 8080:8080 HelloworldProject/springboot-app:latest
