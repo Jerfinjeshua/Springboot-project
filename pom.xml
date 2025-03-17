@@ -11,7 +11,6 @@
 	<groupId>com.Projects</groupId>
 	<artifactId>helloworld</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<packaging>war</packaging>
 	<name>helloworld</name>
 	<description>Demo project for Spring Boot</description>
 	<url/>
@@ -30,6 +29,7 @@
 	<properties>
 		<java.version>17</java.version>
 	</properties>
+	<packaging>jar</packaging>
 	<dependencies>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
@@ -55,6 +55,8 @@
 			<artifactId>spring-boot-starter-test</artifactId>
 			<scope>test</scope>
 		</dependency>
+		
+
 	</dependencies>
 
 	<build>
