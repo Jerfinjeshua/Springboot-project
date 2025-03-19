@@ -23,37 +23,44 @@ jobs:
         run: mvn clean package -DskipTests
 
       - name: Verify JAR File Exists (Cross-Platform)
-        shell: bash
+        shell: pwsh
         run: |
-          if [ ! -d "target" ]; then
-            echo "❌ No target directory found!"
+          if (!(Test-Path -Path "target" -PathType Container)) {
+            Write-Host "❌ No target directory found!"
             exit 1
-          fi
-          
-          JAR_FILE=$(find target -maxdepth 1 -name "*.jar" | head -n 1)
-          
-          if [ -z "$JAR_FILE" ]; then
-            echo "❌ No JAR file found in target/! Exiting..."
+          }
+
+          $jarFile = Get-ChildItem -Path "target" -Filter "*.jar" | Select-Object -First 1
+
+          if ($null -eq $jarFile) {
+            Write-Host "❌ No JAR file found in target/! Exiting..."
             exit 1
-          fi
-          
-          echo "✅ Found JAR file: $JAR_FILE"
-          echo "JAR_FILE=$JAR_FILE" >> $GITHUB_ENV  # Store in environment variable
+          }
+
+          Write-Host "✅ Found JAR file: $jarFile"
+          echo "JAR_FILE=$($jarFile.FullName)" | Out-File -FilePath $env:GITHUB_ENV -Append
 
       - name: Login to Docker Hub
         run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
 
       - name: Build and Push Docker Image
+        shell: pwsh
         run: |
-          echo "✅ Using JAR file: $JAR_FILE"
-          cp "$JAR_FILE" app.jar  # Copy so Docker can access it
-          
-          IMAGE_TAG=${{ secrets.DOCKER_USERNAME }}/springboot-app:$(date +%Y%m%d%H%M%S)  # Use timestamp as tag
-          
-          docker build -t $IMAGE_TAG .
-          docker push $IMAGE_TAG
-          
-          echo "IMAGE_TAG=$IMAGE_TAG" >> $GITHUB_ENV  # Store tag for deploy job
+          $jarFile = $env:JAR_FILE
+          if (!$jarFile) {
+            Write-Host "❌ JAR file path not set!"
+            exit 1
+          }
+
+          Write-Host "✅ Using JAR file: $jarFile"
+          Copy-Item -Path $jarFile -Destination "app.jar"
+
+          $imageTag = "${{ secrets.DOCKER_USERNAME }}/springboot-app:" + (Get-Date -Format "yyyyMMddHHmmss")
+          docker build -t $imageTag .
+          docker push $imageTag
+
+          Write-Host "✅ Docker Image Pushed: $imageTag"
+          echo "IMAGE_TAG=$imageTag" | Out-File -FilePath $env:GITHUB_ENV -Append
 
   deploy:
     runs-on: ubuntu-latest
@@ -67,7 +74,8 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_SSH_KEY }}
           script: |
-            docker pull ${{ secrets.DOCKER_USERNAME }}/springboot-app:latest
+            IMAGE_TAG=${{ secrets.DOCKER_USERNAME }}/springboot-app:$(date +%Y%m%d%H%M%S)
+            docker pull $IMAGE_TAG
             docker stop springboot-app || true
             docker rm springboot-app || true
-            docker run -d --name springboot-app -p 8080:8080 ${{ secrets.DOCKER_USERNAME }}/springboot-app:latest
+            docker run -d --name springboot-app -p 8080:8080 $IMAGE_TAG
