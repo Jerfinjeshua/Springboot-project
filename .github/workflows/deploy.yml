@@ -73,16 +73,16 @@ jobs:
           Write-Host "✅ Docker Image pushed successfully!"
           echo "IMAGE_TAG=$imageTag" | Out-File -FilePath $env:GITHUB_ENV -Append
 
-    deploy:
-    runs-on: self-hosted  # Deploying locally
-
+  deploy:
+    runs-on: self-hosted
     needs: build
+
     steps:
       - name: Pull latest Docker image
         shell: powershell
         run: docker pull ${{ secrets.DOCKER_USERNAME }}/springboot-app:latest
 
-      - name: Stop and remove existing container (PowerShell Fix)
+      - name: Stop and remove existing container
         shell: powershell
         run: |
           if (docker ps -q --filter "name=springboot-app") {
