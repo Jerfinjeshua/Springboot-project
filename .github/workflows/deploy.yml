@@ -80,13 +80,7 @@ jobs:
         shell: powershell
         run: docker pull ${{ secrets.DOCKER_USERNAME }}/springboot-app:latest
 
-      - name: Stop and remove existing container
-        shell: powershell
-        run: |
-          docker stop springboot-app 2>$null
-          docker rm springboot-app 2>$null
-          Write-Host "✅ Old container stopped and removed."
-
+      
       - name: Run new container
         shell: powershell
         run: |
