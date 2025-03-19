@@ -73,7 +73,7 @@ jobs:
           Write-Host "✅ Docker Image pushed successfully!"
           echo "IMAGE_TAG=$imageTag" | Out-File -FilePath $env:GITHUB_ENV -Append
 
-  deploy:
+    deploy:
     runs-on: self-hosted  # Deploying locally
 
     needs: build
@@ -82,17 +82,22 @@ jobs:
         shell: powershell
         run: docker pull ${{ secrets.DOCKER_USERNAME }}/springboot-app:latest
 
-      - name: Stop and remove existing container
+      - name: Stop and remove existing container (PowerShell Fix)
         shell: powershell
         run: |
-          docker stop springboot-app || Write-Host "No running container."
-          docker rm springboot-app || Write-Host "No existing container."
+          if (docker ps -q --filter "name=springboot-app") {
+            docker stop springboot-app
+            docker rm springboot-app
+            Write-Host "✅ Stopped and removed existing container."
+          } else {
+            Write-Host "ℹ️ No running container found. Skipping stop & remove."
+          }
 
       - name: Run new container
         shell: powershell
         run: |
           docker run -d --name springboot-app -p 8080:8080 ${{ secrets.DOCKER_USERNAME }}/springboot-app:latest
-          Write-Host "✅ Spring Boot app running at http://localhost:8080"
+          Write-Host "✅ Spring Boot app is now running at http://localhost:8080"
 
       - name: Clean up old Docker images
         shell: powershell
