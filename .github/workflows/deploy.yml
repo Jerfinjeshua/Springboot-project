@@ -84,7 +84,7 @@ jobs:
       - name: Run new container
         shell: powershell
         run: |
-          docker run -d --name springboot-app -p 8080:8080 ${{ secrets.DOCKER_USERNAME }}/springboot-app:latest
+          docker run -d --name springboot-app -p 8081:8081 ${{ secrets.DOCKER_USERNAME }}/springboot-app:latest
           Write-Host "✅ Spring Boot app is now running at http://localhost:8080"
 
       - name: Clean up old Docker images
